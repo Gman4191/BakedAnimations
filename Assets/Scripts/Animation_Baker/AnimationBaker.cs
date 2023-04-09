@@ -128,16 +128,10 @@ public class AnimationBaker : MonoBehaviour
                 mat.EnableKeyword("ANIM_LOOP");
             }
 
-            var go = new GameObject(name + "." + clip.name);
-            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
-            go.AddComponent<MeshFilter>().sharedMesh = skin.sharedMesh;
-
             AssetDatabase.CreateAsset(posTex, Path.Combine(subFolderPath, pRt.name + ".asset"));
             AssetDatabase.CreateAsset(normTex, Path.Combine(subFolderPath, nRt.name + ".asset"));
             AssetDatabase.CreateAsset(tanTex, Path.Combine(subFolderPath, tRt.name + ".asset"));
-            AssetDatabase.CreateAsset(mat, Path.Combine(subFolderPath, string.Format("{0}.{1}.animTex.asset", name, clip.name)));
-            PrefabUtility.SaveAsPrefabAsset(go, Path.Combine(folderPath, go.name + ".prefab").Replace("\\", "/"));
-            AssetDatabase.SaveAssets();
+            AssetDatabase.CreateAsset(mat, Path.Combine(subFolderPath, string.Format("{0}.{1}.animTex.asset", name, clip.name)));            AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 #endif
         }
