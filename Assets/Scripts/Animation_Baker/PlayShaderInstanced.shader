@@ -11,7 +11,8 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 	}
 	SubShader
 	{
-		Tags { "RenderType"="Opaque" "Queue"="Transparent+1"}
+		Tags { "RenderType"="Opaque"
+			   "Queue"="Transparent+1"}
 		LOD 100 Cull Off
 
 		Pass
@@ -20,7 +21,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma multi_compile ___ ANIM_LOOP
-			#pragma multi_compile_instancing
+			//#pragma multi_compile_instancing
 
 			#include "UnityCG.cginc"
 
@@ -38,14 +39,14 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 				float4 vertex : SV_POSITION;
 			};
 
-			StructuredBuffer<float4> unitPositions;
+			StructuredBuffer<float4> _PositionBuffer;
 			sampler2D _MainTex, _PosTex, _NmlTex;
 			float4 _PosTex_TexelSize;
 			float _Length, _DT;
 			
-			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_INSTANCEID)
+			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
-
+				float4 unitPosition = _PositionBuffer[vinst];
 				float t = (_Time.y - _DT) / _Length;
 #if ANIM_LOOP
 				t = fmod(t, 1.0);
@@ -54,8 +55,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 #endif
 				float x = (vid + 0.5) * ts.x;
 				float y = t;
-				float4 pos = tex2Dlod(_PosTex, float4(x, y, 0, 0));
-				pos = pos + unitPositions[vinst];
+				float4 pos = tex2Dlod(_PosTex, float4(x, y, 0, 0)) + unitPosition;
 				float3 normal = tex2Dlod(_NmlTex, float4(x, y, 0, 0));
 
 				v2f o;

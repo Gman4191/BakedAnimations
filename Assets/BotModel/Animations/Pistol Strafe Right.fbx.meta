@@ -16,7 +16,9 @@ ModelImporter:
     optimizeGameObjects: 0
     removeConstantScaleCurves: 1
     motionNodeName: 
-    rigImportErrors: 
+    rigImportErrors: "Copied Avatar Rig Configuration mis-match. Transform hierarchy
+      does not match:\n\tParent for 'mixamorig:Hips' differs from one found in HumanDescription.
+      'Pistol Strafe Right' was found instead of 'Armature'.\n"
     rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
@@ -526,18 +528,18 @@ ModelImporter:
         length: 0
         modified: 0
     skeleton:
-    - name: BotModel(Clone)
+    - name: Original(Clone)
       parentName: 
       position: {x: 0, y: 0, z: 0}
       rotation: {x: 0, y: 0, z: 0, w: 1}
       scale: {x: 1, y: 1, z: 1}
     - name: BotModel
-      parentName: BotModel(Clone)
+      parentName: Original(Clone)
       position: {x: -0, y: 0, z: 0}
       rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
       scale: {x: 100, y: 100, z: 100}
     - name: mixamorig:Hips
-      parentName: BotModel(Clone)
+      parentName: Original(Clone)
       position: {x: 0.00003117286, y: 1.820658, z: -0.011222379}
       rotation: {x: 0.0000010562736, y: 0.000003878148, z: -0.00012583402, w: 1}
       scale: {x: 1, y: 1, z: 1}
@@ -873,7 +875,7 @@ ModelImporter:
     hasTranslationDoF: 0
     hasExtraRoot: 1
     skeletonHasParents: 1
-  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 27d9d5758b860fd4faef1b9d7f18ea33, type: 3}
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: fd0fe480e74052a458b0f85251677b2b, type: 3}
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 3
   humanoidOversampling: 1
