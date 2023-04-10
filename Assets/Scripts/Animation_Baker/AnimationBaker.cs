@@ -40,6 +40,7 @@ public class AnimationBaker : MonoBehaviour
     [ContextMenu("bake texture")]
     void Bake()
     {
+        //transform.Rotate(90, 0, 0);
         var skin = GetComponentInChildren<SkinnedMeshRenderer>();
         var vCount = skin.sharedMesh.vertexCount;
         var texWidth = Mathf.NextPowerOfTwo(vCount);
@@ -64,9 +65,9 @@ public class AnimationBaker : MonoBehaviour
                 RenderTexture.active = rt;
                 GL.Clear(true, true, Color.clear);
             }
-
             for (var i = 0; i < frames; i++)
             {
+                
                 clip.SampleAnimation(gameObject, dt * i);
                 skin.BakeMesh(mesh);
 
@@ -82,6 +83,7 @@ public class AnimationBaker : MonoBehaviour
                     })
                 );
             }
+Debug.Log(transform.rotation.eulerAngles);
             var buffer = new ComputeBuffer(infoList.Count, System.Runtime.InteropServices.Marshal.SizeOf(typeof(VertInfo)));
             buffer.SetData(infoList.ToArray());
 

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 98722ab4f8c6dc3499d79722be10fea1
+guid: edab1b91ebda0794fb2ae85c7b1b133c
 ModelImporter:
   serializedVersion: 21300
   internalIDToNameTable: []
@@ -33,11 +33,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Pistol Run
+      name: Pistol Right Strafe
       takeName: root|Armature|mixamo.com|Layer0
       internalID: 4040584431725059667
       firstFrame: 0
-      lastFrame: 22
+      lastFrame: 17
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

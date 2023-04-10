@@ -6,6 +6,7 @@ public class UnitRenderingController : MonoBehaviour
 {
     public int rows = 10, columns = 10;
     public int unitOffset = 5;
+
     // Each mesh must must only have 1 mesh (subMeshIndex of 0)
     public Mesh[] unitMeshes;
     public Material[] unitMaterials;
@@ -17,6 +18,15 @@ public class UnitRenderingController : MonoBehaviour
     private ComputeBuffer rotationBuffer;
     private ComputeBuffer argsBuffer;
     private uint[][] args;
+
+    // Data corresponding to a specific unit
+    struct UnitData
+    {
+        bool  isLooping;
+        float time;
+        uint  currentAnimation;
+    };
+
     // Start is called before the first frame update
     void Start()
     {
@@ -46,17 +56,12 @@ public class UnitRenderingController : MonoBehaviour
         // TEMPORARILY ONLY USING 1 ARGS BUFFER
         argsBuffer.SetData(args[0]);
         unitPositions = new Vector4[rows*columns];
-        /*for(int x = 0; x < rows; x++)
+        for(int x = 0; x < rows; x++)
         {
             for(int y = 0; y < columns; y++)
             {
-                unitPositions[y] = new Vector4(x * unitOffset, 0, (y+rows)*unitOffset, 0);
-                Debug.Log(unitPositions[y]);
+                unitPositions[x*rows + y] = new Vector4(((x + y) % rows) * unitOffset, 0, x * unitOffset, 0);
             }
-        }*/
-        for(int i = 0; i < unitPositions.Length; i++)
-        {
-            unitPositions[i] = new Vector4(Random.Range(0,100), 0, Random.Range(0, 100), 0);
         }
         unitRotations = new Quaternion[rows*columns];      
 
@@ -71,7 +76,7 @@ public class UnitRenderingController : MonoBehaviour
 
         for(int i = 0; i < unitMeshes.Length; i++)
         {
-            Graphics.DrawMeshInstancedIndirect(unitMeshes[i], subMeshIndex, unitMaterials[i], new Bounds(Vector3.zero, new Vector3(1000.0f, 1000.0f, 1000.0f)), argsBuffer);
+            Graphics.DrawMeshInstancedIndirect(unitMeshes[i], subMeshIndex, unitMaterials[i], new Bounds(Vector3.zero, new Vector3(1000.0f, 1000.0f, 1000.0f)), argsBuffer, 0, null, UnityEngine.Rendering.ShadowCastingMode.On, true);
         }
     }
 

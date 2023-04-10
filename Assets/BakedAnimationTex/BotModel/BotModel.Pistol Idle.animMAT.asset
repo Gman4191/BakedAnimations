@@ -22,15 +22,15 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: f6fb06dbe8533a04ebe589e6ae96a4ea, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NmlTex:
-        m_Texture: {fileID: 2800000, guid: dd3a7ac62e1b87c438751b28c15afbfc, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _PosTex:
-        m_Texture: {fileID: 2800000, guid: 81babab3dcb4cb547a47673cfc95e36a, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
