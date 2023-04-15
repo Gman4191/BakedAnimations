@@ -76,7 +76,7 @@ public class UnitRenderingController : MonoBehaviour
 
         for(int i = 0; i < unitMeshes.Length; i++)
         {
-            Graphics.DrawMeshInstancedIndirect(unitMeshes[i], subMeshIndex, unitMaterials[i], new Bounds(Vector3.zero, new Vector3(1000.0f, 1000.0f, 1000.0f)), argsBuffer, 0, null, UnityEngine.Rendering.ShadowCastingMode.On, true);
+            Graphics.DrawMeshInstancedIndirect(unitMeshes[i], subMeshIndex, unitMaterials[i], new Bounds(Vector3.zero, new Vector3(1000.0f, 1000.0f, 1000.0f)), argsBuffer);
         }
     }
 
@@ -92,6 +92,7 @@ public class UnitRenderingController : MonoBehaviour
         // Update the position buffer
         if(positionBuffer != null)
             positionBuffer.Release();
+
         positionBuffer = new ComputeBuffer(unitPositions.Length, sizeof(float)*4);
         positionBuffer.SetData(unitPositions);
         unitMaterials[0].SetBuffer("_PositionBuffer", positionBuffer);
