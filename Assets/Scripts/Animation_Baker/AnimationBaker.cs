@@ -10,7 +10,6 @@ using System.IO;
 public class AnimationBaker : MonoBehaviour
 {
     public ComputeShader infoTexGen;
-    public Shader playShader;
     public AnimationClip[] clips;
 
     public struct VertInfo
@@ -40,7 +39,6 @@ public class AnimationBaker : MonoBehaviour
     [ContextMenu("bake texture")]
     void Bake()
     {
-        //transform.Rotate(90, 0, 0);
         var skin = GetComponentInChildren<SkinnedMeshRenderer>();
         var vCount = skin.sharedMesh.vertexCount;
         var texWidth = Mathf.NextPowerOfTwo(vCount);
@@ -83,7 +81,6 @@ public class AnimationBaker : MonoBehaviour
                     })
                 );
             }
-Debug.Log(transform.rotation.eulerAngles);
             var buffer = new ComputeBuffer(infoList.Count, System.Runtime.InteropServices.Marshal.SizeOf(typeof(VertInfo)));
             buffer.SetData(infoList.ToArray());
 
@@ -101,38 +98,45 @@ Debug.Log(transform.rotation.eulerAngles);
             buffer.Release();
 
 #if UNITY_EDITOR
-            var folderName = "BakedAnimationTex";
+            // Create a folder to contain the baked animation information
+            var folderName = "BakedAnimations";
             var folderPath = Path.Combine("Assets", folderName);
             if (!AssetDatabase.IsValidFolder(folderPath))
                 AssetDatabase.CreateFolder("Assets", folderName);
 
+            // Create a folder to contain a specific animation's textures
             var subFolder = name;
             var subFolderPath = Path.Combine(folderPath, subFolder);
             if (!AssetDatabase.IsValidFolder(subFolderPath))
                 AssetDatabase.CreateFolder(folderPath, subFolder);
 
+            // Create a folder to contain animation objects
+            var animFolderName = "Animations";
+            var animFolderPath = Path.Combine(folderPath, animFolderName);
+            if(!AssetDatabase.IsValidFolder(animFolderPath))
+                AssetDatabase.CreateFolder(folderPath, animFolderName);
+
+            // Convert the textures to texture2D 
             var posTex = RenderTextureToTexture2D.Convert(pRt);
             var normTex = RenderTextureToTexture2D.Convert(nRt);
-            var tanTex = RenderTextureToTexture2D.Convert(tRt);
             Graphics.CopyTexture(pRt, posTex);
             Graphics.CopyTexture(nRt, normTex);
-            Graphics.CopyTexture(tRt, tanTex);
 
-            var mat = new Material(playShader);
-            mat.SetTexture("_MainTex", skin.sharedMaterial.mainTexture);
-            mat.SetTexture("_PosTex", posTex);
-            mat.SetTexture("_NmlTex", normTex);
-            mat.SetFloat("_Length", clip.length);
+            // Create an animation object to store a specific animation's data
+            AnimationObject animation = ScriptableObject.CreateInstance<AnimationObject>();
+            animation.positionTexture = posTex;
+            animation.normalTexture = normTex;
+            animation.animationLength = clip.length;
             if (clip.wrapMode == WrapMode.Loop)
             {
-                mat.SetFloat("_Loop", 1f);
-                mat.EnableKeyword("ANIM_LOOP");
+                animation.isLooping = true;
             }
 
+            // Save the textures and animation object to their designated folders
             AssetDatabase.CreateAsset(posTex, Path.Combine(subFolderPath, pRt.name + ".asset"));
             AssetDatabase.CreateAsset(normTex, Path.Combine(subFolderPath, nRt.name + ".asset"));
-            AssetDatabase.CreateAsset(tanTex, Path.Combine(subFolderPath, tRt.name + ".asset"));
-            AssetDatabase.CreateAsset(mat, Path.Combine(subFolderPath, string.Format("{0}.{1}.animTex.asset", name, clip.name)));            AssetDatabase.SaveAssets();
+            AssetDatabase.CreateAsset(animation, Path.Combine(animFolderPath, string.Format("{0}_{1}.asset", name, clip.name)));
+            AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 #endif
         }

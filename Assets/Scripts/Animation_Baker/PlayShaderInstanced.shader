@@ -21,7 +21,9 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 		CBUFFER_START(UnityPerMaterial)
 			#define UNITY_PI 3.14159265359f
 			#define ts _PosTex_TexelSize
+
 			StructuredBuffer<float4> _PositionBuffer;
+			StructuredBuffer<float3> _RotationBuffer;
 			sampler2D _MainTex, _PosTex, _NmlTex;
 			float4 _MainTex_ST;
 			float4 _BaseColor;
@@ -33,11 +35,12 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 
 		Pass
 		{		
-			Tags {"Queue"="Transparent+1" "LightMode"="ShadowCaster"}
+			Tags {"Queue"="Transparent" "LightMode"="ShadowCaster"}
 
 			HLSLPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma multi_compile ___ ANIM_LOOP
 
 			struct appdata
 			{
@@ -54,6 +57,8 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
 				float4 unitPosition = _PositionBuffer[vinst];
+				float3 unitRotationDegrees = _RotationBuffer[vinst];
+				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
 				float t = (_Time.y - _DT) / _Length;
 				
 				#if ANIM_LOOP
@@ -72,6 +77,12 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 					0, -cos(-UNITY_PI/2), -sin(-UNITY_PI/2), 0,
 					0, sin(-UNITY_PI/2), -cos(-UNITY_PI/2), 0,
 					0, 0, 0, 1), pos);
+
+				pos = mul(float4x4(
+					cos(radians.y) * cos(radians.z), sin(radians.x) * sin(radians.y) * cos(radians.z) - cos(radians.x) * sin(radians.z), cos(radians.x) * sin(radians.y) * cos(radians.z) + sin(radians.x) * sin(radians.z), 0,
+					cos(radians.y) * sin(radians.z), sin(radians.x) * sin(radians.y) * sin(radians.z) + cos(radians.x) * cos(radians.z), cos(radians.x) * sin(radians.y) * sin(radians.z) - sin(radians.x) * cos(radians.z), 0,
+					-sin(radians.y), sin(radians.x) * cos(radians.y), cos(radians.x) * cos(radians.y), 0,
+					0, 0, 0, 1), pos);	
 
 				// Render each unit relative to the unit's position
 				pos += unitPosition;
@@ -105,7 +116,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 			#pragma fragment frag
 			#pragma multi_compile ___ ANIM_LOOP
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-			#pragma multi_compile _ _SHADOWS_SOFT    
+			#pragma multi_compile _ _SHADOWS_SOFT  
 
 			struct appdata
             {
@@ -128,6 +139,8 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
 				float4 unitPosition = _PositionBuffer[vinst];
+				float3 unitRotationDegrees = _RotationBuffer[vinst];
+				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
 				float t = (_Time.y - _DT) / _Length;
 				
 				#if ANIM_LOOP
@@ -146,6 +159,12 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 					0, -cos(-UNITY_PI/2), -sin(-UNITY_PI/2), 0,
 					0, sin(-UNITY_PI/2), -cos(-UNITY_PI/2), 0,
 					0, 0, 0, 1), pos);
+
+				pos = mul(float4x4(
+					cos(radians.y) * cos(radians.z), sin(radians.x) * sin(radians.y) * cos(radians.z) - cos(radians.x) * sin(radians.z), cos(radians.x) * sin(radians.y) * cos(radians.z) + sin(radians.x) * sin(radians.z), 0,
+					cos(radians.y) * sin(radians.z), sin(radians.x) * sin(radians.y) * sin(radians.z) + cos(radians.x) * cos(radians.z), cos(radians.x) * sin(radians.y) * sin(radians.z) - sin(radians.x) * cos(radians.z), 0,
+					-sin(radians.y), sin(radians.x) * cos(radians.y), cos(radians.x) * cos(radians.y), 0,
+					0, 0, 0, 1), pos);	
 
 				// Render each unit relative to the unit's position
 				pos += unitPosition;
@@ -169,7 +188,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
                 inputdata.normalWS = normalize(i.normalWS);
                 inputdata.viewDirectionWS = i.viewDir;
                 inputdata.bakedGI = SAMPLE_GI( i.lightmapUV, i.vertexSH, inputdata.normalWS );
-
+				inputdata.shadowCoord = TransformWorldToShadowCoord(i.positionWS);
 
                 SurfaceData surfacedata;
                 surfacedata.albedo = _BaseColor.xyz;

@@ -14,11 +14,10 @@ public class UnitRenderingController : MonoBehaviour
 
     private Vector4[] unitPositions;
     private ComputeBuffer positionBuffer;
-    private Quaternion[] unitRotations;
+    private Vector3[] unitRotations;
     private ComputeBuffer rotationBuffer;
     private ComputeBuffer argsBuffer;
     private uint[][] args;
-
     // Data corresponding to a specific unit
     struct UnitData
     {
@@ -63,7 +62,7 @@ public class UnitRenderingController : MonoBehaviour
                 unitPositions[x*rows + y] = new Vector4(((x + y) % rows) * unitOffset, 0, x * unitOffset, 0);
             }
         }
-        unitRotations = new Quaternion[rows*columns];      
+        unitRotations = new Vector3[rows*columns];    
 
         if(unitMeshes.Length != unitMaterials.Length)
             Debug.Log("Mismatched unit Mesh/Material Error");
@@ -93,11 +92,25 @@ public class UnitRenderingController : MonoBehaviour
         if(positionBuffer != null)
             positionBuffer.Release();
 
-        positionBuffer = new ComputeBuffer(unitPositions.Length, sizeof(float)*4);
+        positionBuffer = new ComputeBuffer(unitPositions.Length, sizeof(float) * 4);
         positionBuffer.SetData(unitPositions);
         unitMaterials[0].SetBuffer("_PositionBuffer", positionBuffer);
-        // Update the rotation buffer
 
+        // Update the rotation buffer
+        if(rotationBuffer != null)
+            rotationBuffer.Release();
+
+        rotationBuffer = new ComputeBuffer(unitRotations.Length, sizeof(float) * 3);
+
+        for(int x = 0; x < rows; x++)
+        {
+            for(int y = 0; y < columns; y++)
+            {
+                unitRotations[x*rows + y] = new Vector3(0, (x+y) * 15, 0);
+            }
+        }  
+        rotationBuffer.SetData(unitRotations);
+        unitMaterials[0].SetBuffer("_RotationBuffer", rotationBuffer);
     }
 
     void OnDisable()
