@@ -23,14 +23,15 @@ public class BakedAnimationRenderer
 
         uint[] args = new uint[5] {0, 0, 0, 0, 0};
         argsBuffer = new ComputeBuffer(1, sizeof(uint) * args.Length, ComputeBufferType.IndirectArguments);
-        args[0] = (uint)instanceMesh.GetIndexCount(subMeshIndex);
+        args[0] = (uint)instanceMesh.GetIndexCount(_subMeshIndex);
         args[1] = (uint)(instanceCount);
-        args[2] = (uint)instanceMesh.GetIndexStart(subMeshIndex);
-        args[3] = (uint)instanceMesh.GetBaseVertex(subMeshIndex);
+        args[2] = (uint)instanceMesh.GetIndexStart(_subMeshIndex);
+        args[3] = (uint)instanceMesh.GetBaseVertex(_subMeshIndex);
 
         instanceMaterial = animationMaterial;
-        mesh = instanceMesh;
         subMeshIndex = _subMeshIndex;
+        mesh = instanceMesh;
+        
     }
 
     public void RenderMeshInstanced(Transform[] transforms, Bounds bounds)
@@ -77,6 +78,7 @@ public class BakedAnimationRenderer
 
     public void ReleaseBuffers()
     {
+        Debug.Log("Released Memory");
         if (positionBuffer != null)
             positionBuffer.Release();
         positionBuffer = null;
