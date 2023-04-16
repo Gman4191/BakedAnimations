@@ -8,7 +8,6 @@ Shader "Unlit/TextureAnimPlayerInstanced"
         _Metallic("Metallic", Range(0,1)) = 0
 		_PosTex("position texture", 2D) = "black"{}
 		_NmlTex("normal texture", 2D) = "white"{}
-		_DT ("delta time", float) = 0
 		_Length ("animation length", Float) = 1
 		[Toggle(ANIM_LOOP)] _Loop("loop", Float) = 0
 	}
@@ -16,7 +15,6 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 	{
 		HLSLINCLUDE
 		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-		//#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"  
 		CBUFFER_START(UnityPerMaterial)
 			#define UNITY_PI 3.14159265359f
@@ -29,7 +27,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 			float4 _BaseColor;
 			float _Smoothness, _Metallic;
 			float4 _PosTex_TexelSize;
-			float _Length, _DT;
+			float _Length;
 		CBUFFER_END
 		ENDHLSL
 
@@ -59,7 +57,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 				float4 unitPosition = _PositionBuffer[vinst];
 				float3 unitRotationDegrees = _RotationBuffer[vinst];
 				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
-				float t = (_Time.y - _DT) / _Length;
+				float t = _Time.y / _Length;
 				
 				#if ANIM_LOOP
 					t = fmod(t, 1.0);
@@ -109,7 +107,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 					"Queue"="Transparent+1"
 					"RenderPipeline" = "UniversalRenderPipeline"
 					"LightMode"="UniversalForward"}
-			LOD 100 Cull Off
+			LOD 100
 			
 			HLSLPROGRAM
 			#pragma vertex vert
@@ -141,7 +139,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 				float4 unitPosition = _PositionBuffer[vinst];
 				float3 unitRotationDegrees = _RotationBuffer[vinst];
 				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
-				float t = (_Time.y - _DT) / _Length;
+				float t = _Time.y / _Length;
 				
 				#if ANIM_LOOP
 					t = fmod(t, 1.0);
@@ -177,6 +175,8 @@ Shader "Unlit/TextureAnimPlayerInstanced"
                 o.viewDir = normalize(_WorldSpaceCameraPos - o.positionWS);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 o.vertex = TransformWorldToHClip(o.positionWS);
+				OUTPUT_LIGHTMAP_UV( v.texcoord1, unity_LightmapST, o.lightmapUV );
+    			OUTPUT_SH(o.normalWS.xyz, o.vertexSH );
 				return o;
 			}
 			
