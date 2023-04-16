@@ -168,6 +168,9 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 				pos += unitPosition;
 
 				float3 normal = tex2Dlod(_NmlTex, float4(x, y, 0, 0)).xyz;
+				normal = mul(float3x3(cos(radians.y) * cos(radians.z), sin(radians.x) * sin(radians.y) * cos(radians.z) - cos(radians.x) * sin(radians.z), cos(radians.x) * sin(radians.y) * cos(radians.z) + sin(radians.x) * sin(radians.z),
+					cos(radians.y) * sin(radians.z), sin(radians.x) * sin(radians.y) * sin(radians.z) + cos(radians.x) * cos(radians.z), cos(radians.x) * sin(radians.y) * sin(radians.z) - sin(radians.x) * cos(radians.z),
+					-sin(radians.y), sin(radians.x) * cos(radians.y), cos(radians.x) * cos(radians.y)), normal);
 
 				v2f o;
                 o.positionWS = TransformObjectToWorld(pos.xyz);

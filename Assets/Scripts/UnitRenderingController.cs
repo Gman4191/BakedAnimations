@@ -11,7 +11,7 @@ public class UnitRenderingController : MonoBehaviour
     public Mesh[] unitMeshes;
     public Material[] unitMaterials;
     public int subMeshIndex = 0;
-    
+
     BakedAnimationRenderer render;
     GameObject[] unitObjects;
     Transform[] transforms;
