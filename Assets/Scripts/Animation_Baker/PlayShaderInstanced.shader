@@ -1,4 +1,4 @@
-Shader "Unlit/TextureAnimPlayerInstanced"
+Shader "Unlit/PlayShaderInstanced"
 {
 	Properties
 	{
