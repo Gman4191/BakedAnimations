@@ -12,7 +12,7 @@ public class BakedAnimationRenderer
     private ComputeBuffer rotationBuffer;
     private Material instanceMaterial;
     private Mesh mesh;
-    private int subMeshIndex;
+    private int subMeshIndex = 0;
 
     public void Initialize(int _instanceCount, Mesh instanceMesh, Material animationMaterial, int _subMeshIndex = 0)
     {

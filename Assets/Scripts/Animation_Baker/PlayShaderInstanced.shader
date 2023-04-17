@@ -139,11 +139,18 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 				float4 unitPosition = _PositionBuffer[vinst];
 				float3 unitRotationDegrees = _RotationBuffer[vinst];
 				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
+
 				float4x4 worldMatrix = float4x4(
 					cos(radians.y) * cos(radians.z), sin(radians.x) * sin(radians.y) * cos(radians.z) - cos(radians.x) * sin(radians.z), cos(radians.x) * sin(radians.y) * cos(radians.z) + sin(radians.x) * sin(radians.z), 0,
 					cos(radians.y) * sin(radians.z), sin(radians.x) * sin(radians.y) * sin(radians.z) + cos(radians.x) * cos(radians.z), cos(radians.x) * sin(radians.y) * sin(radians.z) - sin(radians.x) * cos(radians.z), 0,
 					-sin(radians.y), sin(radians.x) * cos(radians.y), cos(radians.x) * cos(radians.y), 0,
 					0, 0, 0, 1);
+				float4x4 xAxisRotationMatrix = float4x4(
+					1, 0, 0, 0,
+					0, -cos(-UNITY_PI/2), -sin(-UNITY_PI/2), 0,
+					0, sin(-UNITY_PI/2), -cos(-UNITY_PI/2), 0,
+					0, 0, 0, 1);
+
 				float t = _Time.y / _Length;
 				
 				#if ANIM_LOOP
@@ -157,11 +164,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 				float4 pos = tex2Dlod(_PosTex, float4(x, y, 0, 0));
 
 				// Adjust character rotation
-				pos = mul(float4x4(
-					1, 0, 0, 0,
-					0, -cos(-UNITY_PI/2), -sin(-UNITY_PI/2), 0,
-					0, sin(-UNITY_PI/2), -cos(-UNITY_PI/2), 0,
-					0, 0, 0, 1), pos);
+				pos = mul(xAxisRotationMatrix, pos);
 
 				pos = mul(worldMatrix, pos);	
 
@@ -169,6 +172,7 @@ Shader "Unlit/TextureAnimPlayerInstanced"
 				pos += unitPosition;
 
 				float3 normal = tex2Dlod(_NmlTex, float4(x, y, 0, 0)).xyz;
+				normal = mul((float3x3)xAxisRotationMatrix, normal);
 				normal = mul((float3x3)worldMatrix, normal);
 
 				v2f o;
