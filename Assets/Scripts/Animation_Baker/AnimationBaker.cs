@@ -132,6 +132,9 @@ public class AnimationBaker : MonoBehaviour
                 animation.isLooping = true;
             }
 
+            byte[] bytes = posTex.EncodeToPNG();
+            File.WriteAllBytes(subFolderPath + "Image" + ".png", bytes);
+
             // Save the textures and animation object to their designated folders
             AssetDatabase.CreateAsset(posTex, Path.Combine(subFolderPath, pRt.name + ".asset"));
             AssetDatabase.CreateAsset(normTex, Path.Combine(subFolderPath, nRt.name + ".asset"));

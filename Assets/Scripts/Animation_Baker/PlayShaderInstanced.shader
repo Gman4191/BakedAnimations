@@ -15,12 +15,13 @@ Shader "Unlit/PlayShaderInstanced"
 	{
 		HLSLINCLUDE
 		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"  
+		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl" 
+		 
 		CBUFFER_START(UnityPerMaterial)
 			#define UNITY_PI 3.14159265359f
 			#define ts _PosTex_TexelSize
 
-			StructuredBuffer<float4> _PositionBuffer;
+			StructuredBuffer<float3> _PositionBuffer;
 			StructuredBuffer<float3> _RotationBuffer;
 			sampler2D _MainTex, _PosTex, _NmlTex;
 			float4 _MainTex_ST;
@@ -52,9 +53,20 @@ Shader "Unlit/PlayShaderInstanced"
 				float4 vertex : SV_POSITION;
 			};
 			
+			struct unitInfo
+			{
+				float3 pos;
+				float3 rot;
+				float3 scale;
+				uint currentAnimation;
+				float _Length;
+				float time;
+				bool isLooping;
+			};
+			
 			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
-				float4 unitPosition = _PositionBuffer[vinst];
+				float3 unitPosition = _PositionBuffer[vinst];
 				float3 unitRotationDegrees = _RotationBuffer[vinst];
 				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
 				float t = _Time.y / _Length;
@@ -65,7 +77,7 @@ Shader "Unlit/PlayShaderInstanced"
 					t = saturate(t);
 				#endif
 
-				float x = (vid + 0.5) * ts.x;
+				float x = ((float)vid + 0.5) * ts.x;
 				float y = t;
 				float4 pos = tex2Dlod(_PosTex, float4(x, y, 0, 0));
 
@@ -83,7 +95,7 @@ Shader "Unlit/PlayShaderInstanced"
 					0, 0, 0, 1), pos);	
 
 				// Render each unit relative to the unit's position
-				pos += unitPosition;
+				pos.xyz += unitPosition;
 
 				float3 normal = tex2Dlod(_NmlTex, float4(x, y, 0, 0)).xyz;
 
@@ -136,7 +148,7 @@ Shader "Unlit/PlayShaderInstanced"
 
 			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
-				float4 unitPosition = _PositionBuffer[vinst];
+				float3 unitPosition = _PositionBuffer[vinst];
 				float3 unitRotationDegrees = _RotationBuffer[vinst];
 				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
 
@@ -169,7 +181,7 @@ Shader "Unlit/PlayShaderInstanced"
 				pos = mul(worldMatrix, pos);	
 
 				// Render each unit relative to the unit's position
-				pos += unitPosition;
+				pos.xyz += unitPosition;
 
 				float3 normal = tex2Dlod(_NmlTex, float4(x, y, 0, 0)).xyz;
 				normal = mul((float3x3)xAxisRotationMatrix, normal);
