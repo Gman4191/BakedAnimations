@@ -17,7 +17,7 @@ public class GenerateStackedTexture
         }
         
         // Initialize the stacked texture
-        stackedTexture = new Texture2D(animations[0].positionTexture.width, height, TextureFormat.RGBA32, false);
+        stackedTexture = new Texture2D(animations[0].positionTexture.width, height, TextureFormat.RGBAHalf, false);
 
         // Copy the pixels of each texture to the stacked texture
         for(int i = 0; i < animations.Length; i++)
@@ -45,7 +45,7 @@ public class GenerateStackedTexture
         }
         
         // Initialize the stacked texture
-        stackedTexture = new Texture2D(animations[0].normalTexture.width, height, TextureFormat.RGBA32, false);
+        stackedTexture = new Texture2D(animations[0].normalTexture.width, height, TextureFormat.RGBAHalf, false);
 
         // Copy the pixels of each texture to the stacked texture
         for(int i = 0; i < animations.Length; i++)

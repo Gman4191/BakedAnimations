@@ -8,7 +8,6 @@ Shader "Unlit/PlayShaderInstanced"
         _Metallic("Metallic", Range(0,1)) = 0
 		_PosTex("position texture", 2D) = "black"{}
 		_NmlTex("normal texture", 2D) = "white"{}
-		_Length ("animation length", Float) = 1
 		[Toggle(ANIM_LOOP)] _Loop("loop", Float) = 0
 	}
 	SubShader
@@ -16,13 +15,24 @@ Shader "Unlit/PlayShaderInstanced"
 		HLSLINCLUDE
 		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 		#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl" 
-		 
+
+		struct unitInfo
+		{
+			float3 pos;
+			float3 rot;
+			float3 scale;
+			float currentAnimation;
+			float length;
+			float animScale;
+			float time;
+			uint isLooping;
+		};
+ 
 		CBUFFER_START(UnityPerMaterial)
 			#define UNITY_PI 3.14159265359f
 			#define ts _PosTex_TexelSize
-
-			StructuredBuffer<float3> _PositionBuffer;
-			StructuredBuffer<float3> _RotationBuffer;
+			
+			StructuredBuffer<unitInfo> _UnitInfoBuffer;
 			sampler2D _MainTex, _PosTex, _NmlTex;
 			float4 _MainTex_ST;
 			float4 _BaseColor;
@@ -52,34 +62,32 @@ Shader "Unlit/PlayShaderInstanced"
 				float3 normal : TEXCOORD1;
 				float4 vertex : SV_POSITION;
 			};
-			
-			struct unitInfo
-			{
-				float3 pos;
-				float3 rot;
-				float3 scale;
-				uint currentAnimation;
-				float _Length;
-				float time;
-				bool isLooping;
-			};
-			
+
 			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
-				float3 unitPosition = _PositionBuffer[vinst];
-				float3 unitRotationDegrees = _RotationBuffer[vinst];
+				// Get unit information from the buffer
+				float3 unitPosition = _UnitInfoBuffer[vinst].pos;
+				float3 unitRotationDegrees = _UnitInfoBuffer[vinst].rot;
+				float unitScale = _UnitInfoBuffer[vinst].scale.x;
+
 				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
-				float t = _Time.y / _Length;
+				float animLength = _UnitInfoBuffer[vinst].length;
+				float yOffset = _UnitInfoBuffer[vinst].currentAnimation;
+				float animScale = _UnitInfoBuffer[vinst].animScale;
+
+				// Adjust the time of the current unit's animation
+				float t = _Time.y / animLength * animScale;
 				
-				#if ANIM_LOOP
-					t = fmod(t, 1.0);
-				#else
-					t = saturate(t);
-				#endif
+				//#if ANIM_LOOP
+					t = fmod(t, animScale);
+				//#else
+				//	t = saturate(t);
+				//#endif
 
 				float x = ((float)vid + 0.5) * ts.x;
-				float y = t;
+				float y = t + yOffset + (0.5 * ts.y);
 				float4 pos = tex2Dlod(_PosTex, float4(x, y, 0, 0));
+				pos.xyz *= unitScale;
 
 				// Adjust character rotation
 				pos = mul(float4x4(
@@ -148,8 +156,9 @@ Shader "Unlit/PlayShaderInstanced"
 
 			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
-				float3 unitPosition = _PositionBuffer[vinst];
-				float3 unitRotationDegrees = _RotationBuffer[vinst];
+				float3 unitPosition = _UnitInfoBuffer[vinst].pos;
+				float3 unitRotationDegrees = _UnitInfoBuffer[vinst].rot;
+				float unitScale = _UnitInfoBuffer[vinst].scale.x;
 				float3 radians = unitRotationDegrees * (UNITY_PI / 180.0f);
 
 				float4x4 worldMatrix = float4x4(
@@ -163,17 +172,22 @@ Shader "Unlit/PlayShaderInstanced"
 					0, sin(-UNITY_PI/2), -cos(-UNITY_PI/2), 0,
 					0, 0, 0, 1);
 
-				float t = _Time.y / _Length;
+				float animLength = _UnitInfoBuffer[vinst].length;
+				float yOffset = _UnitInfoBuffer[vinst].currentAnimation;
+				float animScale = _UnitInfoBuffer[vinst].animScale;
 				
+				float t = _Time.y / animLength * animScale;
+
 				#if ANIM_LOOP
-					t = fmod(t, 1.0);
+					t = fmod(t, animScale);
 				#else
 					t = saturate(t);
 				#endif
 
 				float x = (vid + 0.5) * ts.x;
-				float y = t;
+				float y = t + yOffset + (0.5 * ts.y);
 				float4 pos = tex2Dlod(_PosTex, float4(x, y, 0, 0));
+				pos.xyz *= unitScale;
 
 				// Adjust character rotation
 				pos = mul(xAxisRotationMatrix, pos);

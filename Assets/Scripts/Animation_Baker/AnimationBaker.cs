@@ -129,7 +129,7 @@ public class AnimationBaker : MonoBehaviour
             animation.animationLength = clip.length;
             if (clip.wrapMode == WrapMode.Loop)
             {
-                animation.isLooping = true;
+                animation.isLooping = 1;
             }
 
             byte[] bytes = posTex.EncodeToPNG();

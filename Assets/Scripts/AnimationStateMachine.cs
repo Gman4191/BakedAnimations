@@ -2,17 +2,24 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AnimationStateMachine : MonoBehaviour
+public class AnimationStateMachine
 {
-    [SerializeField]
     private AnimationObject[] animationObjects;
     private State[] animationStates;
     private Texture2D stackedPositionTexture;
     private Texture2D stackedNormalTexture;
     private float[] yOffsets;
+    private Material instanceMaterial;
 
-    public void Start()
+    public State[] AnimationStates
     {
+        get{return animationStates;}
+        set{animationStates = value;}
+    }
+    public AnimationStateMachine(ref Material _instanceMaterial, AnimationObject[] _animationObjects)
+    {
+        instanceMaterial = _instanceMaterial;
+        animationObjects = _animationObjects;
         stackedPositionTexture = GenerateStackedTexture.generateStackedPositionTexture(animationObjects);
         stackedNormalTexture   = GenerateStackedTexture.generateStackedNormalTexture(animationObjects);
         yOffsets               = new float[animationObjects.Length];
@@ -24,6 +31,8 @@ public class AnimationStateMachine : MonoBehaviour
                 yOffsets[i] += animationObjects[j].animationLength;
             }
         }
+        instanceMaterial.SetTexture("_PosTex", stackedPositionTexture);
+        instanceMaterial.SetTexture("_NmlTex", stackedNormalTexture);
     }
 
     public void UpdateState(int currentState, ref unitInfo unitInformation)
@@ -31,7 +40,7 @@ public class AnimationStateMachine : MonoBehaviour
         if(animationStates[currentState].hasNextState())
         {
             animationStates[currentState] = animationStates[currentState].getNextState();
-            Play(animationObjects[animationStates[currentState].AnimationIndex], unitInformation);
+            Play(animationStates[currentState].AnimationIndex, ref unitInformation);
         }
 
     }
@@ -40,10 +49,9 @@ public class AnimationStateMachine : MonoBehaviour
     public bool Play(int animationIndex, ref unitInfo unitInformation)
     {
         unitInformation.currentAnimation = yOffsets[animationIndex];
-        unitInformation.animationLength = animationObjects[animationIndex].animationLength;
-        unitInformation.time = 0.0f;
-        unitInformation.isLooping = animationObjects[animationIndex].isLooping;
-
+        unitInformation.animationLength  = animationObjects[animationIndex].animationLength;
+        unitInformation.time             = 0.0f;
+        unitInformation.isLooping        = animationObjects[animationIndex].isLooping;
         return true;
     }
 }
@@ -63,6 +71,7 @@ public class State
     public State(int _animationIndex)
     {
         animationIndex = _animationIndex;
+        transitions = new Dictionary<State, TransitionFunction>();
     }
 
     public void addTransition(State newState, TransitionFunction transitionFunction)
