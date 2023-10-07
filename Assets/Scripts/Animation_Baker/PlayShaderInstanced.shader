@@ -24,7 +24,6 @@ Shader "Unlit/PlayShaderInstanced"
 			float currentAnimation;
 			float length;
 			float animScale;
-			float time;
 			uint isLooping;
 		};
  

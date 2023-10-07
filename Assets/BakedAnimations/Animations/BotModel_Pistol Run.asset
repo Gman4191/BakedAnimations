@@ -15,4 +15,4 @@ MonoBehaviour:
   positionTexture: {fileID: 2800000, guid: 9a679b5becfebf34a8a20c520ed655e0, type: 2}
   normalTexture: {fileID: 2800000, guid: 36f49be241fdc874e8fb469554a04968, type: 2}
   animationLength: 0.73333335
-  isLooping: 1
+  isLooping: 0

@@ -19,8 +19,6 @@ public class UnitRenderingController : MonoBehaviour
 
     [SerializeField]
     private AnimationObject[] animationObjects;
-    private AnimationStateMachine stateMachine;
-    private State[] states;
     private GameObject[] unitObjects;
     private Transform[] transforms;
     private Bounds bounds;

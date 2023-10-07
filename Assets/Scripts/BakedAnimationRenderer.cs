@@ -11,7 +11,6 @@ public struct unitInfo
     public float animationLength;
     public float animationScale;
     public uint isLooping;
-    public float time;
 }
 
 public class BakedAnimationRenderer
@@ -38,6 +37,9 @@ public class BakedAnimationRenderer
     // Generated stacked Vertex Animation Textures
     private Texture2D stackedPositionTexture;
     private Texture2D stackedNormalTexture;
+
+    // Animation Data
+    private float[] animationLengths;
 
     // Starting offset into stacked textures on the Y dimension for each animation 
     private float[] yOffsets;
@@ -76,9 +78,10 @@ public class BakedAnimationRenderer
         instanceMaterial.SetTexture("_PosTex", stackedPositionTexture);
         instanceMaterial.SetTexture("_NmlTex", stackedNormalTexture);
 
-        // Initialize the y offsets and animation scales
+        // Initialize the y offsets and animation scales and lengths
         yOffsets = new float[animationObjects.Length];
         animationScales = new float[animationObjects.Length];
+        animationLengths = new float[animationObjects.Length];
 
         for(int i = 0; i < animationObjects.Length; i++)
         {
@@ -88,20 +91,20 @@ public class BakedAnimationRenderer
                 if(j != i)
                     yOffsets[i] += (float)(animationObjects[j].positionTexture.height) / (float)(stackedPositionTexture.height); 
             }
-            Debug.Log(yOffsets[i]);
-            Debug.Log(animationScales[i]);
+            // Copy the animation lengths
+            animationLengths[i] = animationObjects[i].animationLength;
         }
 
         // Initialize unit information
         unitInfos = new unitInfo[instanceCount];
-
+        int randomIndex;
         for(int i = 0; i < unitInfos.Length; i++)
         {
+            randomIndex = Random.Range(0, animationObjects.Length);
             unitInfos[i].isLooping = 0;
-            unitInfos[i].currentAnimation = yOffsets[1];
-            unitInfos[i].animationScale = animationScales[1];
-            unitInfos[i].animationLength  = animationObjects[1].animationLength;
-            unitInfos[i].time = 0.0f;
+            unitInfos[i].currentAnimation = yOffsets[randomIndex];
+            unitInfos[i].animationScale = animationScales[randomIndex];
+            unitInfos[i].animationLength  = animationObjects[randomIndex].animationLength;
         }
     }
 
@@ -115,8 +118,6 @@ public class BakedAnimationRenderer
         // Update the unit information on the GPU
         UpdateBuffers(transforms);
         
-        // Set the current time 
-        Shader.SetGlobalFloat("_CustomTime", Time.timeSinceLevelLoad);
         Graphics.DrawMeshInstancedIndirect(mesh, subMeshIndex, instanceMaterial, bounds, argsBuffer);
     }
 
@@ -131,7 +132,7 @@ public class BakedAnimationRenderer
 
         // Update the unit information buffer
         unitInfoBuffer?.Release();
-        int unitBufferSize = sizeof(float) * 13 + sizeof(uint);
+        int unitBufferSize = sizeof(float) * 12 + sizeof(uint);
         unitInfoBuffer = new ComputeBuffer(unitInfos.Length, unitBufferSize);
         unitInfoBuffer.SetData(unitInfos);
         instanceMaterial.SetBuffer("_UnitInfoBuffer", unitInfoBuffer);
@@ -145,5 +146,18 @@ public class BakedAnimationRenderer
 
         argsBuffer?.Release();
         argsBuffer = null;
+    }
+
+    public void ChangeAnimation(int unitIndex, int animationIndex, uint isLooping = 0)
+    {
+        // Bounds check for animation index
+        if(animationIndex >= 0 && animationIndex < animationLengths.Length)
+        {
+            // Change the animation based on the animation index
+            unitInfos[unitIndex].isLooping = isLooping;
+            unitInfos[unitIndex].currentAnimation = yOffsets[animationIndex];
+            unitInfos[unitIndex].animationScale = animationScales[animationIndex];
+            unitInfos[unitIndex].animationLength  = animationLengths[animationIndex];
+        }
     }
 }
