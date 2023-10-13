@@ -222,7 +222,7 @@ Shader "Animation/PlayShaderInstanced"
 				normalSample = normalize(i.normalWS * normalSample);
 
                 SurfaceData surfacedata;
-                surfacedata.albedo = _BaseColor.xyz;
+                surfacedata.albedo = col.xyz;
                 surfacedata.specular = 0;
                 surfacedata.metallic = _Metallic;
                 surfacedata.smoothness = _Smoothness;

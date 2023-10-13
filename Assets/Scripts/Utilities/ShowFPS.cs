@@ -5,7 +5,9 @@ using TMPro;
 
 public class ShowFPS : MonoBehaviour {
 	public TextMeshProUGUI fpsText;
-	public float deltaTime;
+	public float pollingTime = 1.0f;
+	public float time;
+	public int frameCount = 0;
 
     void Start()
     {
@@ -13,8 +15,16 @@ public class ShowFPS : MonoBehaviour {
     }
 
 	void Update () {
-		deltaTime += (Time.deltaTime - deltaTime) * 0.1f;
-		float fps = 1.0f / deltaTime;
-		fpsText.text = "FPS: " + Mathf.Ceil (fps).ToString();
+		time += Time.deltaTime;
+		frameCount++;
+
+		if(time >= pollingTime)
+		{
+			int frameRate = Mathf.RoundToInt(frameCount / time);
+			fpsText.text = "FPS " + frameRate.ToString();
+
+			time -= pollingTime;
+			frameCount = 0;
+		}
 	}
 }

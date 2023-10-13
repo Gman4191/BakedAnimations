@@ -129,7 +129,7 @@ public class BakedAnimationRenderer
 
     private void UpdateBuffers(Transform[] transforms)
     {
-        for(int i = 0; i < transforms.Length; i++)
+        for(int i = 0; i < instanceCount; i++)
         {
             objectInfos[i].position = transforms[i].position;
             objectInfos[i].rotation = transforms[i].rotation.eulerAngles;
