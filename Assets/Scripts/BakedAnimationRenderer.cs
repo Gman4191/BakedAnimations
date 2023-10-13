@@ -1,8 +1,6 @@
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.InputSystem.Interactions;
 
-public struct unitInfo
+public struct objectInfo
 {
     public Vector3 position;
     public Vector3 rotation;
@@ -21,9 +19,9 @@ public class BakedAnimationRenderer
     // Arguments for instanced indirect rendering
     private ComputeBuffer argsBuffer;
 
-    // Unit information
-    public unitInfo[] unitInfos;
-    private ComputeBuffer unitInfoBuffer;
+    // Object information
+    public objectInfo[] objectInfos;
+    private ComputeBuffer objectInfoBuffer;
 
     // Material with the "PlayShaderInstanced" shader
     private Material instanceMaterial;
@@ -38,18 +36,26 @@ public class BakedAnimationRenderer
     private Texture2D stackedPositionTexture;
     private Texture2D stackedNormalTexture;
 
-    // Animation Data
+    // Length in seconds of the animations
     private float[] animationLengths;
 
     // Starting offset into stacked textures on the Y dimension for each animation 
     private float[] yOffsets;
 
-    // Scale of each animation
+    // Length of the animations within texture space scaled within the stacked textures
     private float[] animationScales;
 
     public void Initialize(int _instanceCount, Mesh instanceMesh, Material animationMaterial, AnimationObject[] animationObjects, int _subMeshIndex = 0)
     {
-        instanceCount = _instanceCount;
+        if(_instanceCount >= 0)
+        {
+            instanceCount = _instanceCount;
+        }
+        else
+        {
+            Debug.LogError("Instance count can not be negative.");
+            return;
+        }
 
         // Initialize the arguments buffer with mesh data and the number of instances to render
         uint[] args = new uint[5] {0, 0, 0, 0, 0};
@@ -62,7 +68,7 @@ public class BakedAnimationRenderer
             args[3] = instanceMesh.GetBaseVertex(_subMeshIndex);
         }
 
-        argsBuffer  = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+        argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         argsBuffer.SetData(args);
 
         // Initialize the mesh and material data
@@ -96,26 +102,26 @@ public class BakedAnimationRenderer
         }
 
         // Initialize unit information
-        unitInfos = new unitInfo[instanceCount];
+        objectInfos = new objectInfo[instanceCount];
         int randomIndex;
-        for(int i = 0; i < unitInfos.Length; i++)
+        for(int i = 0; i < objectInfos.Length; i++)
         {
             randomIndex = Random.Range(0, animationObjects.Length);
-            unitInfos[i].isLooping = 0;
-            unitInfos[i].currentAnimation = yOffsets[randomIndex];
-            unitInfos[i].animationScale = animationScales[randomIndex];
-            unitInfos[i].animationLength  = animationObjects[randomIndex].animationLength;
+            objectInfos[i].isLooping = 0;
+            objectInfos[i].currentAnimation = yOffsets[randomIndex];
+            objectInfos[i].animationScale = animationScales[randomIndex];
+            objectInfos[i].animationLength  = animationObjects[randomIndex].animationLength;
         }
     }
 
-    // Called every frame, updates the unit information of the instanced meshes
+    // Call every frame, updates the object information of the instanced meshes
     public void RenderAnimatedMeshInstanced(Transform[] transforms, Bounds bounds)
     {
         // Render meshes only when the renderer data has been initialized
         if(mesh == null)
             return;
 
-        // Update the unit information on the GPU
+        // Update the object information on the GPU
         UpdateBuffers(transforms);
         
         Graphics.DrawMeshInstancedIndirect(mesh, subMeshIndex, instanceMaterial, bounds, argsBuffer);
@@ -125,24 +131,24 @@ public class BakedAnimationRenderer
     {
         for(int i = 0; i < transforms.Length; i++)
         {
-            unitInfos[i].position = transforms[i].position;
-            unitInfos[i].rotation = transforms[i].rotation.eulerAngles;
-            unitInfos[i].scale = transforms[i].localScale;
+            objectInfos[i].position = transforms[i].position;
+            objectInfos[i].rotation = transforms[i].rotation.eulerAngles;
+            objectInfos[i].scale = transforms[i].localScale;
         }
 
-        // Update the unit information buffer
-        unitInfoBuffer?.Release();
+        // Update the object information buffer
+        objectInfoBuffer?.Release();
         int unitBufferSize = sizeof(float) * 12 + sizeof(uint);
-        unitInfoBuffer = new ComputeBuffer(unitInfos.Length, unitBufferSize);
-        unitInfoBuffer.SetData(unitInfos);
-        instanceMaterial.SetBuffer("_UnitInfoBuffer", unitInfoBuffer);
+        objectInfoBuffer = new ComputeBuffer(objectInfos.Length, unitBufferSize);
+        objectInfoBuffer.SetData(objectInfos);
+        instanceMaterial.SetBuffer("_ObjectInfoBuffer", objectInfoBuffer);
     }
 
     // Release the allocated memory used by the animation renderer
     public void ReleaseBuffers()
     {
-        unitInfoBuffer?.Release();
-        unitInfoBuffer = null;
+        objectInfoBuffer?.Release();
+        objectInfoBuffer = null;
 
         argsBuffer?.Release();
         argsBuffer = null;
@@ -154,10 +160,10 @@ public class BakedAnimationRenderer
         if(animationIndex >= 0 && animationIndex < animationLengths.Length)
         {
             // Change the animation based on the animation index
-            unitInfos[unitIndex].isLooping = isLooping;
-            unitInfos[unitIndex].currentAnimation = yOffsets[animationIndex];
-            unitInfos[unitIndex].animationScale = animationScales[animationIndex];
-            unitInfos[unitIndex].animationLength  = animationLengths[animationIndex];
+            objectInfos[unitIndex].isLooping = isLooping;
+            objectInfos[unitIndex].currentAnimation = yOffsets[animationIndex];
+            objectInfos[unitIndex].animationScale = animationScales[animationIndex];
+            objectInfos[unitIndex].animationLength  = animationLengths[animationIndex];
         }
     }
 }

@@ -30,7 +30,6 @@ public class UnitRenderingController : MonoBehaviour
         playerControls.Enable();
     }
 
-    // Start is called before the first frame update
     void Start()
     {
         bounds      = new Bounds(Vector3.zero, Vector3.one * boundsSize);
