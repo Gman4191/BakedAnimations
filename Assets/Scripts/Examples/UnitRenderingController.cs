@@ -27,7 +27,10 @@ public class UnitRenderingController : MonoBehaviour
     private Bounds bounds;
 
     private bool isUsingBakedAnimations = false;
-    private bool canToggle = true;
+    private bool canToggleBakedAnimations = true;
+
+    private bool canToggleMethods = true;
+    public bool useJobs = true;
 
     private void OnEnable() {
         playerControls.Enable();
@@ -54,7 +57,7 @@ public class UnitRenderingController : MonoBehaviour
         }
 
         render = new BakedAnimationRenderer();
-        render.Initialize(currentInstanceCount, unitMeshes[0], unitMaterials[0], animationObjects, 0);
+        render.Initialize(currentInstanceCount, unitMeshes[0], unitMaterials[0], transforms, animationObjects, 0);
         
     }
 
@@ -63,19 +66,30 @@ public class UnitRenderingController : MonoBehaviour
     {
         if(isUsingBakedAnimations)
         {
-            for(int i = 0; i < unitObjects.Length; i++)
+            // Disable all AnimatorController objects once
+            if(canToggleBakedAnimations)
             {
-                unitObjects[i].SetActive(false);
+                for(int i = 0; i < unitObjects.Length; i++)
+                {
+                    unitObjects[i].SetActive(false);
+                }
+                canToggleBakedAnimations = false;
             }
-            render?.RenderAnimatedMeshInstanced(transforms, bounds);
+
+            // Render animated mesh instances
+            render?.RenderAnimatedMeshInstanced(bounds);
         }
         else
         {
+            canToggleBakedAnimations = true;
+
+            // Disable all AnimatorController objects
             for(int i = 0; i < unitObjects.Length; i++)
             {
                 unitObjects[i].SetActive(false);
             }
 
+            // Enable only the current instance count of AnimatorController objects
             for(int i = 0; i < currentInstanceCount; i++)
             {
                 unitObjects[i].SetActive(true);
@@ -83,28 +97,31 @@ public class UnitRenderingController : MonoBehaviour
         }
         
         // Toggle between using baked animations and not using baked animations
-        if(playerControls.ReadValue<float>() > 0.0f && canToggle)
+        if(playerControls.ReadValue<float>() > 0.0f && canToggleMethods)
         {
             isUsingBakedAnimations = !isUsingBakedAnimations;
-            canToggle = false;
+            canToggleMethods = false;
         }
         else if(playerControls.ReadValue<float>() <= 0.0f)
         {
-            canToggle = true;
+            canToggleMethods = true;
         }
 
+        // Quit the application when 'ESC' is pressed
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             Application.Quit();
         }
     }
 
+    // Release any manually allocated memory on application end
     void OnDisable()
     {
         render?.ReleaseBuffers();
         playerControls.Disable();
     }
 
+    // Update the currently rendered instance count based on the GUI user input
     public void UpdateInstanceCount(GameObject canvas)
     {
         Slider slider = canvas.GetComponentInChildren<Slider>();
@@ -112,7 +129,7 @@ public class UnitRenderingController : MonoBehaviour
         currentInstanceCount = (int)slider.value;
         currentCountText.text = currentInstanceCount.ToString();
         render?.ReleaseBuffers();
-        render?.Initialize(currentInstanceCount, unitMeshes[0], unitMaterials[0], animationObjects, 0);
+        render?.Initialize(currentInstanceCount, unitMeshes[0], unitMaterials[0], transforms, animationObjects, 0);
     }
 }
 

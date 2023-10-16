@@ -433,6 +433,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a800ef98c8c10064bb9073d0ac748aac, type: 2}
   - {fileID: 11400000, guid: bd8db9d79a865784f946c9c27dd0f5e6, type: 2}
   - {fileID: 11400000, guid: 1c28034b4184eff4f96696e3ed5fb276, type: 2}
+  useJobs: 1
 --- !u!4 &539590720
 Transform:
   m_ObjectHideFlags: 0
