@@ -1,4 +1,7 @@
 using UnityEngine;
+using Unity.Collections;
+using Unity.Jobs;
+using UnityEngine.Jobs;
 
 public struct objectInfo
 {
@@ -20,8 +23,11 @@ public class BakedAnimationRenderer
     private ComputeBuffer argsBuffer;
 
     // Object information
-    public objectInfo[] objectInfos;
+    private NativeArray<objectInfo> objectInfos;
     private ComputeBuffer objectInfoBuffer;
+
+    // Transform Access to be used in transform assignment
+    private TransformAccessArray transformAccessArray;
 
     // Material with the "PlayShaderInstanced" shader
     private Material instanceMaterial;
@@ -37,15 +43,17 @@ public class BakedAnimationRenderer
     private Texture2D stackedNormalTexture;
 
     // Length in seconds of the animations
-    private float[] animationLengths;
+    private NativeArray<float> animationLengthsInSecs;
 
     // Starting offset into stacked textures on the Y dimension for each animation 
-    private float[] yOffsets;
+    private NativeArray<float> animationStartOffsets;
 
     // Length of the animations within texture space scaled within the stacked textures
-    private float[] animationScales;
+    private NativeArray<float> animationEndOffsets;
+    
 
-    public void Initialize(int _instanceCount, Mesh instanceMesh, Material animationMaterial, AnimationObject[] animationObjects, int _subMeshIndex = 0)
+    // Initialize mesh and object instance data
+    public void Initialize(int _instanceCount, Mesh instanceMesh, Material animationMaterial, Transform[] transforms, AnimationObject[] animationObjects, int _subMeshIndex = 0)
     {
         if(_instanceCount >= 0)
         {
@@ -76,7 +84,7 @@ public class BakedAnimationRenderer
         subMeshIndex = _subMeshIndex;
         mesh = instanceMesh;
 
-        // Generate the stacked Vertex Animation Textures
+        // Stack the animation textures together into collective Vertex Animation Textures
         stackedPositionTexture = GenerateStackedTexture.generateStackedPositionTexture(animationObjects);
         stackedNormalTexture = GenerateStackedTexture.generateStackedNormalTexture(animationObjects);
 
@@ -84,57 +92,68 @@ public class BakedAnimationRenderer
         instanceMaterial.SetTexture("_PosTex", stackedPositionTexture);
         instanceMaterial.SetTexture("_NmlTex", stackedNormalTexture);
 
-        // Initialize the y offsets and animation scales and lengths
-        yOffsets = new float[animationObjects.Length];
-        animationScales = new float[animationObjects.Length];
-        animationLengths = new float[animationObjects.Length];
+        // Initialize arrays to store VAT (Vertex Animation Texture) animation metadata.
+        // These arrays define the starting offset, scale, and length of each animation.
+        animationStartOffsets = new NativeArray<float>(animationObjects.Length, Allocator.Persistent);
+        animationEndOffsets = new NativeArray<float>(animationObjects.Length, Allocator.Persistent);
+        animationLengthsInSecs = new NativeArray<float>(animationObjects.Length, Allocator.Persistent);
 
         for(int i = 0; i < animationObjects.Length; i++)
         {
-            animationScales[i] = (float)(animationObjects[i].positionTexture.height-1) / (float)(stackedPositionTexture.height);
+            // Calculate the end position of an animation in texture space within the stacked VATs
+            animationEndOffsets[i] = (float)(animationObjects[i].positionTexture.height-1) / (float)(stackedPositionTexture.height);
             for(int j = 0; j < i; j++)
             {
+                // Set the animation start offset as the sum of previous starting offsets
                 if(j != i)
-                    yOffsets[i] += (float)(animationObjects[j].positionTexture.height) / (float)(stackedPositionTexture.height); 
+                    animationStartOffsets[i] += (float)(animationObjects[j].positionTexture.height) / (float)(stackedPositionTexture.height); 
             }
-            // Copy the animation lengths
-            animationLengths[i] = animationObjects[i].animationLength;
+            // Copy the animation lengths in seconds
+            animationLengthsInSecs[i] = animationObjects[i].animationLength;
         }
 
         // Initialize unit information
-        objectInfos = new objectInfo[instanceCount];
-        int randomIndex;
+        objectInfos = new NativeArray<objectInfo>(instanceCount, Allocator.Persistent);
+
         for(int i = 0; i < objectInfos.Length; i++)
         {
-            randomIndex = Random.Range(0, animationObjects.Length);
-            objectInfos[i].isLooping = 0;
-            objectInfos[i].currentAnimation = yOffsets[randomIndex];
-            objectInfos[i].animationScale = animationScales[randomIndex];
-            objectInfos[i].animationLength  = animationObjects[randomIndex].animationLength;
+            int randomIndex = Random.Range(0, animationLengthsInSecs.Length);
+            objectInfo obj = new objectInfo
+            {
+                isLooping = 0,
+                currentAnimation = animationStartOffsets[randomIndex],
+                animationScale = animationEndOffsets[randomIndex],
+                animationLength = animationLengthsInSecs[randomIndex]
+            };
+            objectInfos[i] = obj;
         }
+
+        // Initialize the thread safe transform access array
+        transformAccessArray = new TransformAccessArray(transforms);
     }
 
     // Call every frame, updates the object information of the instanced meshes
-    public void RenderAnimatedMeshInstanced(Transform[] transforms, Bounds bounds)
+    public void RenderAnimatedMeshInstanced(Bounds bounds)
     {
         // Render meshes only when the renderer data has been initialized
         if(mesh == null)
             return;
 
         // Update the object information on the GPU
-        UpdateBuffers(transforms);
+        UpdateBuffers();
         
         Graphics.DrawMeshInstancedIndirect(mesh, subMeshIndex, instanceMaterial, bounds, argsBuffer);
     }
 
-    private void UpdateBuffers(Transform[] transforms)
+    private void UpdateBuffers()
     {
-        for(int i = 0; i < instanceCount; i++)
+        AssignTransforms assignmentJob = new AssignTransforms
         {
-            objectInfos[i].position = transforms[i].position;
-            objectInfos[i].rotation = transforms[i].rotation.eulerAngles;
-            objectInfos[i].scale = transforms[i].localScale;
-        }
+            _objectInfos = objectInfos,
+            _instanceCount = instanceCount
+        };
+        JobHandle jobHandle = assignmentJob.Schedule(transformAccessArray);
+        jobHandle.Complete();        
 
         // Update the object information buffer
         objectInfoBuffer?.Release();
@@ -152,18 +171,30 @@ public class BakedAnimationRenderer
 
         argsBuffer?.Release();
         argsBuffer = null;
+
+        objectInfos.Dispose();
+        animationStartOffsets.Dispose();
+        animationLengthsInSecs.Dispose();
+        animationEndOffsets.Dispose();
+
+        transformAccessArray.Dispose();
     }
 
-    public void ChangeAnimation(int unitIndex, int animationIndex, uint isLooping = 0)
+    // Change the current animation of an object instance
+    public void ChangeAnimation(int objectIndex, int animationIndex, uint isLooping = 0)
     {
         // Bounds check for animation index
-        if(animationIndex >= 0 && animationIndex < animationLengths.Length)
+        if(animationIndex >= 0 && animationIndex < animationLengthsInSecs.Length)
         {
             // Change the animation based on the animation index
-            objectInfos[unitIndex].isLooping = isLooping;
-            objectInfos[unitIndex].currentAnimation = yOffsets[animationIndex];
-            objectInfos[unitIndex].animationScale = animationScales[animationIndex];
-            objectInfos[unitIndex].animationLength  = animationLengths[animationIndex];
+            objectInfo obj = new objectInfo
+            {
+                isLooping = isLooping,
+                currentAnimation = animationStartOffsets[animationIndex],
+                animationScale = animationEndOffsets[animationIndex],
+                animationLength  = animationLengthsInSecs[animationIndex]
+            };
+            objectInfos[objectIndex] = obj;
         }
     }
 }
