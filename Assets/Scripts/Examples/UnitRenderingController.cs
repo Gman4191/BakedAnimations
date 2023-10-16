@@ -27,10 +27,9 @@ public class UnitRenderingController : MonoBehaviour
     private Bounds bounds;
 
     private bool isUsingBakedAnimations = false;
-    private bool canToggleBakedAnimations = true;
+    private bool canToggleBakedAnimations = false;
 
     private bool canToggleMethods = true;
-    public bool useJobs = true;
 
     private void OnEnable() {
         playerControls.Enable();
@@ -81,18 +80,22 @@ public class UnitRenderingController : MonoBehaviour
         }
         else
         {
-            canToggleBakedAnimations = true;
-
-            // Disable all AnimatorController objects
-            for(int i = 0; i < unitObjects.Length; i++)
+            if(canToggleBakedAnimations == false)
             {
-                unitObjects[i].SetActive(false);
-            }
+                // Disable all AnimatorController objects
+                for(int i = 0; i < unitObjects.Length; i++)
+                {
+                    unitObjects[i].SetActive(false);
+                }
 
-            // Enable only the current instance count of AnimatorController objects
-            for(int i = 0; i < currentInstanceCount; i++)
-            {
-                unitObjects[i].SetActive(true);
+                // Enable only the current instance count of AnimatorController objects
+                for(int i = 0; i < currentInstanceCount; i++)
+                {
+                    unitObjects[i].SetActive(true);
+                }
+
+                canToggleBakedAnimations = true;
+
             }
         }
         
@@ -130,6 +133,18 @@ public class UnitRenderingController : MonoBehaviour
         currentCountText.text = currentInstanceCount.ToString();
         render?.ReleaseBuffers();
         render?.Initialize(currentInstanceCount, unitMeshes[0], unitMaterials[0], transforms, animationObjects, 0);
+
+        // Disable all AnimatorController objects
+        for(int i = 0; i < unitObjects.Length; i++)
+        {
+            unitObjects[i].SetActive(false);
+        }
+
+        // Enable only the current instance count of AnimatorController objects
+        for(int i = 0; i < currentInstanceCount; i++)
+        {
+            unitObjects[i].SetActive(true);
+        }
     }
 }
 
