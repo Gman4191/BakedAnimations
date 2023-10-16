@@ -17,7 +17,11 @@ public struct AssignTransforms : IJobParallelForTransform
         {
             position = transform.position,
             rotation = transform.rotation.eulerAngles,
-            scale = transform.localScale
+            scale = transform.localScale,
+            currentAnimation = _objectInfos[i].currentAnimation,
+            animationLength = _objectInfos[i].animationLength,
+            animationScale = _objectInfos[i].animationScale,
+            isLooping = _objectInfos[i].isLooping
         };
         _objectInfos[i] = obj;
     }

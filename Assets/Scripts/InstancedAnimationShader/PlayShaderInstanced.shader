@@ -174,11 +174,7 @@ Shader "Animation/PlayShaderInstanced"
 				
 				float t = _Time.y / animLength * animScale;
 
-				#if ANIM_LOOP
-					t = fmod(t, animScale);
-				#else
-					t = saturate(t);
-				#endif
+				t = fmod(t, animScale);
 
 				float x = (vid + 0.5) * ts.x;
 				float y = t + yOffset + (0.5 * ts.y);
@@ -226,7 +222,7 @@ Shader "Animation/PlayShaderInstanced"
                 surfacedata.specular = 0;
                 surfacedata.metallic = _Metallic;
                 surfacedata.smoothness = _Smoothness;
-                surfacedata.normalTS = normalSample.xyz;
+                surfacedata.normalTS = 0;
                 surfacedata.emission = 0;
                 surfacedata.occlusion = 1;
                 surfacedata.alpha = 0;

@@ -125,6 +125,7 @@ public class BakedAnimationRenderer
                 animationScale = animationEndOffsets[randomIndex],
                 animationLength = animationLengthsInSecs[randomIndex]
             };
+
             objectInfos[i] = obj;
         }
 
@@ -141,6 +142,8 @@ public class BakedAnimationRenderer
 
         // Update the object information on the GPU
         UpdateBuffers();
+
+        
         
         Graphics.DrawMeshInstancedIndirect(mesh, subMeshIndex, instanceMaterial, bounds, argsBuffer);
     }
@@ -153,7 +156,7 @@ public class BakedAnimationRenderer
             _instanceCount = instanceCount
         };
         JobHandle jobHandle = assignmentJob.Schedule(transformAccessArray);
-        jobHandle.Complete();        
+        jobHandle.Complete(); 
 
         // Update the object information buffer
         objectInfoBuffer?.Release();

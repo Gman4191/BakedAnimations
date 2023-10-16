@@ -134,6 +134,9 @@ public class UnitRenderingController : MonoBehaviour
         render?.ReleaseBuffers();
         render?.Initialize(currentInstanceCount, unitMeshes[0], unitMaterials[0], transforms, animationObjects, 0);
 
+        if(canToggleBakedAnimations)
+            return;
+            
         // Disable all AnimatorController objects
         for(int i = 0; i < unitObjects.Length; i++)
         {
@@ -145,6 +148,8 @@ public class UnitRenderingController : MonoBehaviour
         {
             unitObjects[i].SetActive(true);
         }
+
+        canToggleBakedAnimations = true;
     }
 }
 
