@@ -1,10 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class GenerateStackedTexture
 {
-    public static Texture2D generateStackedPositionTexture(AnimationObject[] animations)
+    public static Texture2D GenerateStackedPositionTexture(AnimationObject[] animations)
     {
         Texture2D stackedTexture;
         int height  = 0;
@@ -32,7 +30,7 @@ public class GenerateStackedTexture
         return stackedTexture;
     }
 
-    public static Texture2D generateStackedNormalTexture(AnimationObject[] animations)
+    public static Texture2D GenerateStackedNormalTexture(AnimationObject[] animations)
     {
         Texture2D stackedTexture;
         int height  = 0;

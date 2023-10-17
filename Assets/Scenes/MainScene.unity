@@ -421,8 +421,8 @@ MonoBehaviour:
       m_Action: Player Controls
       m_Flags: 0
     m_Flags: 0
-  rows: 317
-  columns: 316
+  rows: 100
+  columns: 100
   unitOffset: 5
   boundsSize: 1000
   unitMeshes:
@@ -533,7 +533,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1128230715}
   m_Direction: 0
   m_MinValue: 0
-  m_MaxValue: 100000
+  m_MaxValue: 10000
   m_WholeNumbers: 0
   m_Value: 1
   m_OnValueChanged:
