@@ -21,14 +21,12 @@ public struct LoopHandlingJob : IJobParallelFor
         if(currentTime >= _currentAnimationStartTimes[i] + _objectInfos[i].animationLength)
         {
             // Change the animation based on the animation index
-            objectInfo obj = new objectInfo
-            {
-                isLooping        = 1,
-                currentAnimation = _animationStartOffsets[0],
-                animationScale   = _animationEndOffsets[0],
-                animationLength  = _animationLengthsInSecs[0],
-                time             = 0.0f
-            };
+            objectInfo obj       = _objectInfos[i];
+            obj.isLooping        = 1;
+            obj.currentAnimation = _animationStartOffsets[0];
+            obj.animationScale   = _animationEndOffsets[0];
+            obj.animationLength  = _animationLengthsInSecs[0];
+            obj.time             = 0.0f;
 
             _currentAnimationStartTimes[i] = currentTime;
             _objectInfos[i]                = obj;

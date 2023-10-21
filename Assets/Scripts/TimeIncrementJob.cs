@@ -6,21 +6,12 @@ using Unity.Jobs;
 public struct TimeIncrementJob : IJobParallelFor
 {
     public NativeArray<objectInfo> _objectInformationArray;
-    public float deltaTime;
+    public float                   deltaTime;
     public void Execute(int index)
     {
-        float objTime = _objectInformationArray[index].time + deltaTime;
-        objectInfo obj = new objectInfo
-        {
-            position         = _objectInformationArray[index].position,
-            rotation         = _objectInformationArray[index].rotation,
-            scale            = _objectInformationArray[index].scale,
-            currentAnimation = _objectInformationArray[index].currentAnimation,
-            animationLength  = _objectInformationArray[index].animationLength,
-            animationScale   = _objectInformationArray[index].animationScale,
-            isLooping        = _objectInformationArray[index].isLooping,
-            time             = objTime,
-        };
+        float objTime  = _objectInformationArray[index].time + deltaTime;
+        objectInfo obj = _objectInformationArray[index];
+        obj.time       = objTime;
         _objectInformationArray[index] = obj;
     }
 }

@@ -9,10 +9,13 @@ public class UnitRenderingController : MonoBehaviour
     public GameObject originalUnitPrefab;
 
     public InputAction playerControls;
-    public int rows = 10, columns = 10;
-    public int unitOffset = 5;
-    public float boundsSize = 1000.0f;
-    private int currentInstanceCount=100;
+    private Transform playerTransform;
+
+    public  int   rows                = 10;
+    public  int   columns             = 10;
+    public  int   unitOffset          = 5;
+    public  float boundsSize          = 1000.0f;
+    private int  currentInstanceCount = 100;
 
     // Each mesh must must only have 1 mesh (subMeshIndex of 0)
     public Mesh[] unitMeshes;
@@ -37,6 +40,7 @@ public class UnitRenderingController : MonoBehaviour
 
     void Start()
     {
+        playerTransform      = Camera.main.transform;
         currentInstanceCount = 100;
         bounds      = new Bounds(Vector3.zero, Vector3.one * boundsSize);
         unitObjects = new GameObject[rows*columns];
@@ -77,6 +81,7 @@ public class UnitRenderingController : MonoBehaviour
 
             // Render animated mesh instances
             render?.RenderAnimatedMeshInstanced(bounds);
+            render?.RenderLODs(transforms, playerTransform.position, 32.0f);
         }
         else
         {

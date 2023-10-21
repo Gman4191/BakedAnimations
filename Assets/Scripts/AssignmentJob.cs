@@ -6,24 +6,17 @@ using UnityEngine.Jobs;
 public struct AssignTransforms : IJobParallelForTransform
 {
     public NativeArray<objectInfo> _objectInfos;
-    public int _numberOfInstances;
+    public int                     _numberOfInstances;
     
     public void Execute(int i, TransformAccess transform)
     {
         if(i >=_numberOfInstances)
             return;
         
-        objectInfo obj = new objectInfo
-        {
-            position         = transform.position,
-            rotation         = transform.rotation.eulerAngles,
-            scale            = transform.localScale,
-            currentAnimation = _objectInfos[i].currentAnimation,
-            animationLength  = _objectInfos[i].animationLength,
-            animationScale   = _objectInfos[i].animationScale,
-            isLooping        = _objectInfos[i].isLooping,
-            time             = _objectInfos[i].time
-        };
+        objectInfo obj  = _objectInfos[i];
+        obj.position    = transform.position;
+        obj.rotation    = transform.rotation.eulerAngles;
+        obj.scale       = transform.localScale;
         _objectInfos[i] = obj;
     }
 }

@@ -24,8 +24,9 @@ Shader "Animation/PlayShaderInstanced"
 			float  currentAnimation;
 			float  length;
 			float  animScale;
-			uint   isLooping;
 			float  time;
+			uint isLooping;
+			uint isRendered;
 		};
  
 		CBUFFER_START(UnityPerMaterial)
@@ -69,6 +70,7 @@ Shader "Animation/PlayShaderInstanced"
 			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
 				// Get object information from the buffer
+				uint   isRendered            = _ObjectInfoBuffer[vinst].isRendered;
 				float3 objectPosition        = _ObjectInfoBuffer[vinst].pos;
 				float3 objectRotationDegrees = _ObjectInfoBuffer[vinst].rot;
 				float3 radians               = objectRotationDegrees * (UNITY_PI / 180.0f);
@@ -77,6 +79,7 @@ Shader "Animation/PlayShaderInstanced"
 				float  currentAnimation      = _ObjectInfoBuffer[vinst].currentAnimation;
 				float  animScale             = _ObjectInfoBuffer[vinst].animScale;
 				float  time                  = _ObjectInfoBuffer[vinst].time;
+				objectScale *= isRendered;
 
 				// Adjust the time of the current object's animation
 				float t = time / animLength * animScale;
@@ -154,6 +157,7 @@ Shader "Animation/PlayShaderInstanced"
 
 			v2f vert (appdata v, uint vid : SV_VertexID, uint vinst : SV_InstanceID)
 			{
+				uint   isRendered            = _ObjectInfoBuffer[vinst].isRendered;
 				float3 objectPosition        = _ObjectInfoBuffer[vinst].pos;
 				float  objectScale           = _ObjectInfoBuffer[vinst].scale.x;
 				float3 objectRotationDegrees = _ObjectInfoBuffer[vinst].rot;
@@ -162,6 +166,7 @@ Shader "Animation/PlayShaderInstanced"
 				float  yOffset               = _ObjectInfoBuffer[vinst].currentAnimation;
 				float  animScale             = _ObjectInfoBuffer[vinst].animScale;
 				float  time                  = _ObjectInfoBuffer[vinst].time;
+				objectScale *= isRendered;
 
 				float4x4 worldMatrix = float4x4(
 					cos(radians.y) * cos(radians.z), sin(radians.x) * sin(radians.y) * cos(radians.z) - cos(radians.x) * sin(radians.z), cos(radians.x) * sin(radians.y) * cos(radians.z) + sin(radians.x) * sin(radians.z), 0,
