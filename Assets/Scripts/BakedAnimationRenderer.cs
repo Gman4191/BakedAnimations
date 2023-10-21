@@ -9,17 +9,19 @@ public struct objectInfo
     public Vector3 position;
     public Vector3 rotation;
     public Vector3 scale;
-    public float currentAnimation;
-    public float animationLength;
-    public float animationScale;
-    public uint isLooping;
-    public float time;
+    public float   currentAnimation;
+    public float   animationLength;
+    public float   animationScale;
+    public float   time;
+    public uint    isLooping;
+    public uint    isRendered;
 }
 
 public class BakedAnimationRenderer
 {
-    private const int OBJECT_BUFFER_SIZE = sizeof(float) * 13 + sizeof(uint);
+    private const int OBJECT_BUFFER_SIZE = sizeof(float) * 13 + sizeof(uint) * 2;
     private const int THREAD_GROUP_SIZE  = 32;
+    private const int LOD_BUFFER_SIZE    = 512;
 
     // Number of animated objects
     private int numberOfInstances;
@@ -29,7 +31,7 @@ public class BakedAnimationRenderer
 
     // Object information
     private NativeArray<objectInfo> objectInformationArray;
-    private ComputeBuffer objectInformationBuffer;
+    private ComputeBuffer           objectInformationBuffer;
 
     // Transform Access to be used in transform assignment
     private TransformAccessArray transformAccessArray;
@@ -59,6 +61,11 @@ public class BakedAnimationRenderer
     // Starting times in seconds of the current animations being played by instanced objects
     private NativeArray<float> currentAnimationStartTimes;
 
+    // Contains the indices of objects that should use their base LOD (LOD buffers)
+    private NativeList<int> renderedIndices;
+    private NativeList<int> previousRenderedIndices;
+    
+
     // Initialize mesh and object instance data
     public void Initialize(int numberOfInstances, Mesh instanceMesh, Material animationMaterial,
                            Transform[] transforms, AnimationObject[] animationObjects, int _subMeshIndex = 0)
@@ -87,6 +94,10 @@ public class BakedAnimationRenderer
         InitializeAnimationMetaData  (animationObjects);
         InitializeObjectInformation  ();
 
+        // Initialize the rendered object index queue
+        renderedIndices = new NativeList<int>(LOD_BUFFER_SIZE, Allocator.Persistent);
+        previousRenderedIndices = new NativeList<int>(LOD_BUFFER_SIZE, Allocator.Persistent);
+
         // Initialize the thread safe transform access array
         transformAccessArray = new TransformAccessArray(transforms);
     }
@@ -96,13 +107,16 @@ public class BakedAnimationRenderer
     {
         if(mesh == null)
             return;
-
+        
         UpdateBuffers();
+        
         HandleAnimations();
         IncrementTime();
+        
         Graphics.DrawMeshInstancedIndirect(mesh, subMeshIndex, instanceMaterial, bounds, argsBuffer);
     }
 
+    // Update the transform and animation metadata of the instanced objects
     private void UpdateBuffers()
     {
         AssignTransforms assignmentJob = new AssignTransforms
@@ -121,16 +135,18 @@ public class BakedAnimationRenderer
         instanceMaterial.SetBuffer("_ObjectInfoBuffer", objectInformationBuffer);
     }
 
+    // Generates stacked position and normal textures from vertex animation textures
     private void GenerateAndSetStackedTextures(AnimationObject[] animationObjects)
     {
         stackedPositionTexture = GenerateStackedTexture.GenerateStackedPositionTexture(animationObjects);
-        stackedNormalTexture = GenerateStackedTexture.GenerateStackedNormalTexture(animationObjects);
+        stackedNormalTexture   = GenerateStackedTexture.GenerateStackedNormalTexture(animationObjects);
 
         // Store the textures in VRAM
         instanceMaterial.SetTexture("_PosTex", stackedPositionTexture);
         instanceMaterial.SetTexture("_NmlTex", stackedNormalTexture);
     }
 
+    // Initializes object information and animation start times for a number of instances with randomized animation parameters.
     private void InitializeObjectInformation()
     {
         objectInformationArray     = new NativeArray<objectInfo>(numberOfInstances, Allocator.Persistent);
@@ -191,6 +207,8 @@ public class BakedAnimationRenderer
         animationEndOffsets.Dispose();
         currentAnimationStartTimes.Dispose();
         transformAccessArray.Dispose();
+        renderedIndices.Dispose();
+        previousRenderedIndices.Dispose();
     }
 
     // Handle Non-Looping animations
@@ -221,5 +239,47 @@ public class BakedAnimationRenderer
 
         JobHandle jobHandle = timeIncrementJob.Schedule(numberOfInstances, THREAD_GROUP_SIZE);
         jobHandle.Complete();
+    }
+
+    // Handle the rendering of the instanced level of detail and the base level of detail
+    public void RenderLODs(Transform[] objectTransforms, Vector3 playerPosition, float threshold)
+    {
+        try
+        {
+            previousRenderedIndices.Clear();
+            previousRenderedIndices.CopyFrom(renderedIndices);
+            renderedIndices.Clear();
+            LevelOfDetailJob levelOfDetailJob = new LevelOfDetailJob
+            {
+                _renderedIndices        = renderedIndices.AsParallelWriter(),
+                _objectInformationArray = objectInformationArray,
+                _playerPosition         = playerPosition,
+                _threshold              = threshold,
+                _numberOfInstances      = numberOfInstances
+            };
+
+            JobHandle jobHandle = levelOfDetailJob.Schedule(transformAccessArray);
+            jobHandle.Complete();
+
+            UpdateBuffers();
+
+            for(int i = 0; i < renderedIndices.Length; i++)
+            {
+                if(previousRenderedIndices.Contains(renderedIndices[i]))
+                    continue;
+                objectTransforms[renderedIndices[i]].gameObject.SetActive(true);
+            }
+
+            for(int i = 0; i < previousRenderedIndices.Length; i++)
+            {
+                if(renderedIndices.Contains(previousRenderedIndices[i]))
+                    continue;
+                objectTransforms[previousRenderedIndices[i]].gameObject.SetActive(false);
+        }
+        } catch(Exception e)
+        {
+            Debug.LogException(e);
+            Debug.Log("Lower the range threshold or increase the maximum capacity of the LOD buffer");
+        }
     }
 }
